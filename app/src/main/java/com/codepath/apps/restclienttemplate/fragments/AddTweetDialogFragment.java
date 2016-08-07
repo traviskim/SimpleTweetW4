@@ -1,8 +1,12 @@
 package com.codepath.apps.restclienttemplate.fragments;
 
+import android.content.res.ColorStateList;
+import android.graphics.Color;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.support.v4.app.DialogFragment;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -11,6 +15,7 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.TextView;
 
 import com.codepath.apps.restclienttemplate.R;
 import com.codepath.apps.restclienttemplate.TwitterApplication;
@@ -33,6 +38,8 @@ import cz.msebera.android.httpclient.Header;
 public class AddTweetDialogFragment extends DialogFragment {
     @BindView(R.id.etBody)
     EditText mBody;
+    @BindView(R.id.tvLeftChar)
+    TextView mLeftChar;
     @BindView(R.id.btSend)
     Button mSend;
     @BindView(R.id.ibClose)
@@ -40,6 +47,7 @@ public class AddTweetDialogFragment extends DialogFragment {
     private Unbinder unBinder;
     Tweet aTweet = new Tweet();
     private TwitterClient client;
+    private final static int MAX_CHAR = 140;
 
     public interface AddTweetDialogListener {
         void onFinishInputDialog(@Nullable JSONObject tweetJson);
@@ -68,8 +76,34 @@ public class AddTweetDialogFragment extends DialogFragment {
         super.onViewCreated(view, savedInstanceState);
         unBinder = ButterKnife.bind(this, view);
         getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
-        // Fetch arguments from bundle
-//        final String beginDate = getArguments().getString("beginDate", "");
+        final ColorStateList defaultColor = mLeftChar.getTextColors();
+        mBody.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
+                int leftCount = MAX_CHAR-charSequence.length();
+                mLeftChar.setText(String.valueOf(leftCount));
+
+                if(leftCount < 0){
+                    mLeftChar.setTextColor(Color.RED);
+                    mSend.setEnabled(false);
+                }else{
+                    if(defaultColor != mLeftChar.getTextColors()) {
+                        mLeftChar.setTextColor(defaultColor);
+                        mSend.setEnabled(true);
+                    }
+                }
+            }
+
+            @Override
+            public void afterTextChanged(Editable editable) {
+
+            }
+        });
 
     }
 
