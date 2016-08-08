@@ -1,4 +1,4 @@
-package com.codepath.apps.restclienttemplate;
+package com.codepath.apps.restclienttemplate.activities;
 
 import android.os.Bundle;
 import android.support.v4.app.FragmentManager;
@@ -9,12 +9,17 @@ import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.codepath.apps.restclienttemplate.R;
 import com.codepath.apps.restclienttemplate.adapters.TweetAdapter;
 import com.codepath.apps.restclienttemplate.fragments.AddTweetDialogFragment;
 import com.codepath.apps.restclienttemplate.models.Tweet;
+import com.codepath.apps.restclienttemplate.network.TwitterApplication;
+import com.codepath.apps.restclienttemplate.network.TwitterClient;
 import com.codepath.apps.restclienttemplate.utils.EndlessRecyclerViewScrollListener;
+import com.codepath.apps.restclienttemplate.utils.NetworkUtil;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 import org.json.JSONArray;
@@ -35,6 +40,7 @@ public class TimelineActivity extends AppCompatActivity implements AddTweetDialo
     private SwipeRefreshLayout swipeContainer;
     LinearLayoutManager mLayoutManager = new LinearLayoutManager(this);
     @BindView(R.id.rvTweets) RecyclerView rvTweets;
+    @BindView(R.id.pbLoading) ProgressBar pb;
 
     private long sId = 1;
     private long mId = 0;
@@ -104,67 +110,76 @@ public class TimelineActivity extends AppCompatActivity implements AddTweetDialo
     //Send an API request to get timeline json
     //Fill the list view by creating tweets obj from the json
     private void populateTimeline() {
-
-        client.getHomeTimeline(new JsonHttpResponseHandler(){
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONArray json) {
-                Log.d("DEBUG", json.toString());
-                //Clean and get new set of tweets
-                tweets.clear();
-                ArrayList<Tweet> newTweets = Tweet.fromJsonArray(json);
-                tweets.addAll(newTweets);
-                tweetAdapter.notifyDataSetChanged();
-                mId = newTweets.get(newTweets.size()-1).getUid();
-                swipeContainer.setRefreshing(false);
-            }
-
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                if(swipeContainer.isRefreshing()) {
+        if(NetworkUtil.isNetworkConnected(TimelineActivity.this)) {
+            pb.setVisibility(ProgressBar.VISIBLE);
+            client.getHomeTimeline(new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONArray json) {
+                    Log.d("DEBUG", json.toString());
+                    //Clean and get new set of tweets
+                    tweets.clear();
+                    ArrayList<Tweet> newTweets = Tweet.fromJsonArray(json);
+                    tweets.addAll(newTweets);
+                    tweetAdapter.notifyDataSetChanged();
+                    mId = newTweets.get(newTweets.size() - 1).getUid();
                     swipeContainer.setRefreshing(false);
+                    pb.setVisibility(ProgressBar.INVISIBLE);
                 }
-                if(errorResponse != null) {
-                    Log.d("DEBUG", errorResponse.toString());
-                    try {
-                        //errors":[{"message":"Rate limit exceeded","code":88}
-                        JSONArray jArray = errorResponse.getJSONArray("errors");
-                        Toast.makeText(TimelineActivity.this, jArray.getJSONObject(0).getString("message"),Toast.LENGTH_SHORT).show();
-                    } catch (JSONException e) {
-                        e.printStackTrace();
+
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    if (swipeContainer.isRefreshing()) {
+                        swipeContainer.setRefreshing(false);
                     }
+                    if (errorResponse != null) {
+                        Log.d("DEBUG", errorResponse.toString());
+                        try {
+                            //errors":[{"message":"Rate limit exceeded","code":88}
+                            JSONArray jArray = errorResponse.getJSONArray("errors");
+                            Toast.makeText(TimelineActivity.this, jArray.getJSONObject(0).getString("message"), Toast.LENGTH_SHORT).show();
+                        } catch (JSONException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                    pb.setVisibility(ProgressBar.INVISIBLE);
                 }
-            }
-        });
+            });
+        }
     }
 
     //Send an API request to get more old tweets json
     //Fill the list view by creating tweets obj from the json
     private void loadMoreTimeline() {
-        client.getOldHomeTimeline(new JsonHttpResponseHandler(){
-            @Override
-            public void onSuccess(int statusCode, Header[] headers, JSONArray json) {
-                //Add old tweets to the bottom of Recyclerview
-                countOldTweets = json.length();
-                if(countOldTweets > 0) {
-                    ArrayList<Tweet> oldTweets = Tweet.fromJsonArray(json);
-                    tweets.addAll(oldTweets);
-                    tweetAdapter.notifyItemInserted(json.length() - 1);
-                    mId = oldTweets.get(oldTweets.size()-1).getUid();
+        if(NetworkUtil.isNetworkConnected(TimelineActivity.this)) {
+            pb.setVisibility(ProgressBar.VISIBLE);
+            client.getOldHomeTimeline(new JsonHttpResponseHandler() {
+                @Override
+                public void onSuccess(int statusCode, Header[] headers, JSONArray json) {
+                    //Add old tweets to the bottom of Recyclerview
+                    countOldTweets = json.length();
+                    if (countOldTweets > 0) {
+                        ArrayList<Tweet> oldTweets = Tweet.fromJsonArray(json);
+                        tweets.addAll(oldTweets);
+                        tweetAdapter.notifyItemInserted(json.length() - 1);
+                        mId = oldTweets.get(oldTweets.size() - 1).getUid();
+                    }
+                    pb.setVisibility(ProgressBar.INVISIBLE);
                 }
-            }
 
-            @Override
-            public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
-                Log.d("DEBUG", errorResponse.toString());
-                try {
-                    //errors":[{"message":"Rate limit exceeded","code":88}
-                    JSONArray jArray = errorResponse.getJSONArray("errors");
-                    Toast.makeText(TimelineActivity.this, jArray.getJSONObject(0).getString("message"),Toast.LENGTH_SHORT).show();
-                } catch (JSONException e) {
-                    e.printStackTrace();
+                @Override
+                public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
+                    Log.d("DEBUG", errorResponse.toString());
+                    pb.setVisibility(ProgressBar.INVISIBLE);
+                    try {
+                        //errors":[{"message":"Rate limit exceeded","code":88}
+                        JSONArray jArray = errorResponse.getJSONArray("errors");
+                        Toast.makeText(TimelineActivity.this, jArray.getJSONObject(0).getString("message"), Toast.LENGTH_SHORT).show();
+                    } catch (JSONException e) {
+                        e.printStackTrace();
+                    }
                 }
-            }
-        });
+            });
+        }
     }
 
     private void showAddTweetDialog() {

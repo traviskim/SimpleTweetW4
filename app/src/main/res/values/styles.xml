@@ -8,8 +8,6 @@
         -->
     </style>
 
-    <color name="actionbar_background">#489cdf</color>
-    <color name="actionbar_text">#ffffff</color>
     <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
         <item name="android:actionBarStyle">@style/MyActionBar</item>
         <item name="android:actionBarTabTextStyle">@style/MyActionBarTabText</item>
