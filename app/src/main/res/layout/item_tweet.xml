@@ -47,6 +47,7 @@
         android:layout_below="@+id/tvName"
         android:layout_alignLeft="@+id/tvName"
         android:layout_alignStart="@+id/tvName"
+        android:lineSpacingMultiplier="1"
         android:autoLink="all"/>
 
     <TextView

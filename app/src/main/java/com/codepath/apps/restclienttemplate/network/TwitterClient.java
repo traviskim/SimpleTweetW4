@@ -1,6 +1,7 @@
 package com.codepath.apps.restclienttemplate.network;
 
 import android.content.Context;
+import android.text.TextUtils;
 
 import com.codepath.apps.restclienttemplate.models.Tweet;
 import com.codepath.oauth.OAuthBaseClient;
@@ -59,19 +60,34 @@ public class TwitterClient extends OAuthBaseClient {
 //		client.get(apiUrl, params, handler);
 //	}
 
-	public void getHomeTimeline(AsyncHttpResponseHandler handler){
+	public void getHomeTimeline(long sId, AsyncHttpResponseHandler handler){
 		String apiUrl = getApiUrl("/statuses/home_timeline.json");
 		RequestParams params = new RequestParams();
 		params.put("count", count);
-		params.put("since_id", sinceId);
+		params.put("since_id", sId);
 		getClient().get(apiUrl, params, handler);
 	}
 
-	public void getOldHomeTimeline(AsyncHttpResponseHandler handler){
+	public void getMentionsTimeline(AsyncHttpResponseHandler handler){
+		String apiUrl = getApiUrl("/statuses/mentions_timeline.json");
+		RequestParams params = new RequestParams();
+		params.put("count", count);
+		getClient().get(apiUrl, params, handler);
+	}
+
+	public void getMoreHomeTimeline(long mId, AsyncHttpResponseHandler handler){
 		String apiUrl = getApiUrl("/statuses/home_timeline.json");
 		RequestParams params = new RequestParams();
 		params.put("count", count);
-		params.put("max_id", maxId);
+		params.put("max_id", mId);
+		getClient().get(apiUrl, params, handler);
+	}
+
+	public void getMoreMentionsTimeline(long mId, AsyncHttpResponseHandler handler){
+		String apiUrl = getApiUrl("/statuses/mentions_timeline.json");
+		RequestParams params = new RequestParams();
+		params.put("count", count);
+		params.put("max_id", mId);
 		getClient().get(apiUrl, params, handler);
 	}
 
@@ -81,6 +97,50 @@ public class TwitterClient extends OAuthBaseClient {
 		RequestParams params = new RequestParams();
 		params.put("status", aTweet.getBody());
 		getClient().post(apiUrl, params, handler);
+	}
+
+	public void getUserTimeline(String screenName, AsyncHttpResponseHandler handler){
+		String apiUrl = getApiUrl("/statuses/user_timeline.json");
+		RequestParams params = new RequestParams();
+		params.put("count", count);
+		params.put("screen_name", screenName);
+		getClient().get(apiUrl, params, handler);
+	}
+
+	public void getMoreUserTimeline(String screenName, long mId, AsyncHttpResponseHandler handler){
+		String apiUrl = getApiUrl("/statuses/user_timeline.json");
+		RequestParams params = new RequestParams();
+		params.put("count", count);
+		params.put("screen_name", screenName);
+		params.put("max_id", mId);
+		getClient().get(apiUrl, params, handler);
+	}
+
+	public void getUserInfo(AsyncHttpResponseHandler handler){
+		String apiUrl = getApiUrl("/account/verify_credentials.json");
+		getClient().get(apiUrl, null, handler);
+	}
+
+	public void getUserShow(long userId, String screenName, AsyncHttpResponseHandler handler){
+		String apiUrl = getApiUrl("/users/show.json");
+		RequestParams params = new RequestParams();
+		if(userId > 0) {
+			params.put("user_id", userId);
+		}
+		if(!TextUtils.isEmpty(screenName)) {
+			params.put("screen_name", screenName);
+		}
+		getClient().get(apiUrl, params, handler);
+	}
+
+	public void getDirectMessage(long mId, AsyncHttpResponseHandler handler) {
+		String apiUrl = getApiUrl("/direct_messages.json");
+		RequestParams params = new RequestParams();
+		params.put("count", count);
+		if(mId > 0) {
+			params.put("max_id", mId);
+		}
+		getClient().get(apiUrl, params, handler);
 	}
 	//Compose a tweet
 	/* 1. Define the endpoint URL with getApiUrl and pass a relative path to the endpoint

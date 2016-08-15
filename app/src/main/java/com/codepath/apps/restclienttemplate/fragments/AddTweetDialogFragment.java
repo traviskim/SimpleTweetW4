@@ -1,5 +1,6 @@
 package com.codepath.apps.restclienttemplate.fragments;
 
+import android.content.Context;
 import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.os.Bundle;
@@ -15,12 +16,15 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.codepath.apps.restclienttemplate.R;
+import com.codepath.apps.restclienttemplate.models.Tweet;
 import com.codepath.apps.restclienttemplate.network.TwitterApplication;
 import com.codepath.apps.restclienttemplate.network.TwitterClient;
-import com.codepath.apps.restclienttemplate.models.Tweet;
 import com.loopj.android.http.JsonHttpResponseHandler;
 
 import org.json.JSONObject;
@@ -36,34 +40,43 @@ import cz.msebera.android.httpclient.Header;
  * Created by traviswkim on 8/6/16.
  */
 public class AddTweetDialogFragment extends DialogFragment {
-    @BindView(R.id.etBody)
-    EditText mBody;
-    @BindView(R.id.tvLeftChar)
-    TextView mLeftChar;
-    @BindView(R.id.btSend)
-    Button mSend;
-    @BindView(R.id.ibClose)
-    ImageButton mClose;
+    @BindView(R.id.etBody) EditText mBody;
+    @BindView(R.id.tvLeftChar) TextView mLeftChar;
+    @BindView(R.id.btSend) Button mSend;
+    @BindView(R.id.ibClose) ImageButton mClose;
+    @BindView(R.id.ivAddProfile) ImageView mAddProfile;
     private Unbinder unBinder;
     Tweet aTweet = new Tweet();
     private TwitterClient client;
     private final static int MAX_CHAR = 140;
+    AddTweetDialogListener mCallback;
 
     public interface AddTweetDialogListener {
         void onFinishInputDialog(@Nullable JSONObject tweetJson);
     }
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+
+        // This makes sure that the container activity has implemented
+        // the callback interface. If not, it throws an exception
+        try {
+            mCallback = (AddTweetDialogListener) context;
+        } catch (ClassCastException e) {
+            throw new ClassCastException(context.toString()
+                    + " must implement OnHeadlineSelectedListener");
+        }
+    }
+
     public AddTweetDialogFragment(){
     }
 
-    public static AddTweetDialogFragment newInstance(){
+    public static AddTweetDialogFragment newInstance(String profileImg){
         AddTweetDialogFragment frag = new AddTweetDialogFragment();
         Bundle args = new Bundle();
-//        args.putString("beginDate", ss.getBeginDate());
-//        args.putString("sortOrder", ss.getSortOrder());
-//        args.putSerializable("client", client);
-//        args.putBooleanArray("newsDeskValues", new boolean[]{ss.isArts(), ss.isFasionStyle(), ss.isSports()});
-//        frag.setArguments(args);
+        args.putString("profileImg", profileImg);
+        frag.setArguments(args);
         return frag;
     }
 
@@ -75,6 +88,11 @@ public class AddTweetDialogFragment extends DialogFragment {
     public void onViewCreated(View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
         unBinder = ButterKnife.bind(this, view);
+        String profileImg = getArguments().getString("profileImg");
+        Glide.with(this).load(profileImg)
+                .centerCrop()
+                .diskCacheStrategy(DiskCacheStrategy.ALL)
+                .into(mAddProfile);
         getDialog().getWindow().setSoftInputMode(WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
         final ColorStateList defaultColor = mLeftChar.getTextColors();
         mBody.addTextChangedListener(new TextWatcher() {
@@ -98,7 +116,6 @@ public class AddTweetDialogFragment extends DialogFragment {
                     }
                 }
             }
-
             @Override
             public void afterTextChanged(Editable editable) {
 
@@ -109,7 +126,7 @@ public class AddTweetDialogFragment extends DialogFragment {
 
     @OnClick(R.id.btSend)
     public void addTweet(Button btn){
-        final AddTweetDialogListener listener = (AddTweetDialogListener)getActivity();
+        //final AddTweetDialogListener listener = (AddTweetDialogListener)getActivity();
         client = TwitterApplication.getRestClient();
         aTweet.setBody(mBody.getText().toString());
         client.setTweet(aTweet);
@@ -118,14 +135,14 @@ public class AddTweetDialogFragment extends DialogFragment {
             @Override
             public void onSuccess(int statusCode, Header[] headers, JSONObject json) {
                 Log.d("DEBUG", json.toString());
-                listener.onFinishInputDialog(json);
+                mCallback.onFinishInputDialog(json);
             }
 
             @Override
             public void onFailure(int statusCode, Header[] headers, Throwable throwable, JSONObject errorResponse) {
                 if(errorResponse != null) {
                     Log.d("DEBUG", errorResponse.toString());
-                    listener.onFinishInputDialog(null);
+                    mCallback.onFinishInputDialog(null);
                 }
             }
         });

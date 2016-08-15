@@ -6,5 +6,8 @@
     <string name="login_label">Connect to Twitter</string>
     <string name="action_add_tweet">Add</string>
     <string name="send">Send</string>
+    <string name="fail_to_get_user_profile">Fail to get user profile</string>
+    <string name="drawer_open">Open navigation drawer</string>
+    <string name="drawer_close">Close navigation drawer</string>
 
 </resources>
